@@ -1,0 +1,93 @@
+rules_version = '2';
+
+// Luật phân quyền cho website Pickleball CEO 110 – CEO 111.
+// Khách: chỉ đọc. Trọng tài: chỉ ghi điểm trận ở sân được phân. Ban tổ chức: ghi mọi thứ.
+// Dán toàn bộ file này vào Firebase Console > Firestore Database > Rules rồi bấm Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isFirstAdmin() {
+      return signedIn()
+        && request.auth.token.email == 'tcaoadm@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    function rolePath() {
+      return /databases/$(database)/documents/roles/$(request.auth.uid);
+    }
+    function hasRole(role) {
+      return signedIn() && exists(rolePath()) && get(rolePath()).data.role == role;
+    }
+    function isAdmin() {
+      return isFirstAdmin() || hasRole('admin');
+    }
+    function isRefereeOfCourt(court) {
+      return hasRole('referee') && court != null && get(rolePath()).data.court == court;
+    }
+
+    match /roles/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /pendingRoles/{uid} {
+      allow read, delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['email', 'name', 'createdAt']);
+    }
+
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /players/{id} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+      match /teams/{id} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      // Trọng tài chỉ ghi trận ở sân mình được phân, và chỉ trận chưa ai giữ hoặc do chính mình giữ.
+      match /matches/{matchId} {
+        allow read: if true;
+        allow create, delete: if isAdmin();
+        allow update: if isAdmin()
+          || (isRefereeOfCourt(resource.data.court)
+              && request.resource.data.court == resource.data.court
+              && (resource.data.get('refereeUid', null) == null || resource.data.refereeUid == request.auth.uid)
+              && request.resource.data.refereeUid == request.auth.uid
+              && request.resource.data.diff(resource.data).affectedKeys()
+                   .hasOnly(['score', 'status', 'games', 'winner', 'refereeUid', 'rallyCount', 'updatedAt',
+                             'firstServer', 'startedAt', 'walkoverReason']));
+
+        // Nhật ký từng pha: chỉ thêm, không sửa. Hoàn tác cũng là một dòng nhật ký.
+        match /rallies/{seq} {
+          allow read: if true;
+          allow create: if isAdmin()
+            || (isRefereeOfCourt(get(/databases/$(database)/documents/events/$(eventId)/matches/$(matchId)).data.court)
+                && get(/databases/$(database)/documents/events/$(eventId)/matches/$(matchId)).data.refereeUid == request.auth.uid
+                && request.resource.data.by == request.auth.uid);
+          allow update, delete: if isAdmin();
+        }
+      }
+
+      // Bình chọn: chỉ khi cổng đang mở, mỗi tài khoản một phiếu (chỉ tạo, không sửa),
+      // không bầu cho chính mình. Người bầu chỉ đọc được phiếu của mình; ban tổ chức đọc tất cả để đếm.
+      match /votes/{uid} {
+        allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+        allow delete: if isAdmin();
+        allow create: if signedIn() && request.auth.uid == uid
+          && get(/databases/$(database)/documents/events/$(eventId)).data.get('voting', {}).get('status', 'closed') == 'open'
+          && request.resource.data.keys().hasOnly(['mvp', 'fairplay', 'voterPlayerId', 'voterName', 'at'])
+          && request.resource.data.mvp is string
+          && request.resource.data.fairplay is string
+          && request.resource.data.mvp != request.resource.data.voterPlayerId
+          && request.resource.data.fairplay != request.resource.data.voterPlayerId;
+      }
+    }
+  }
+}

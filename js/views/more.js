@@ -1,5 +1,6 @@
 import { esc, icon } from '../dom.js';
-import { ROLE_LABEL } from '../firebase.js';
+import { ROLE_LABEL, firestore } from '../firebase.js';
+import { isTestEvent, switchEvent, MAIN_EVENT_ID, TEST_EVENT_ID, sub, eventDoc, save } from '../data.js';
 
 const ADMIN_LINKS = [
   ['#/cai-dat', 'Cài đặt giải'],
@@ -49,5 +50,45 @@ export function render(el, { session }) {
       <section class="card"><h2>Ban tổ chức</h2>${list(ADMIN_LINKS, !isAdmin)}</section>
       <section class="card"><h2>Trọng tài</h2>${list(REFEREE_LINKS, !isReferee)}</section>
       <section class="card"><h2>Cho mọi người</h2>${list(PUBLIC_LINKS, false)}</section>
+      ${isAdmin ? `<section class="card stack">
+        <h2>Giải thử</h2>
+        <p class="muted">Một bộ dữ liệu riêng để tập dượt: nạp người chơi mẫu, xếp lịch, bấm điểm thử mà không ảnh hưởng giải thật. Chỉ trình duyệt này chuyển sang giải thử.</p>
+        ${isTestEvent()
+          ? `<div class="btn-row"><button class="btn" data-event="main">Về giải thật</button>
+             <button class="btn btn-danger" data-event="wipe">Xóa toàn bộ dữ liệu giải thử</button></div>`
+          : '<button class="btn btn-ghost" data-event="test">Chuyển sang giải thử</button>'}
+      </section>` : ''}
     </div>`;
+
+  el.addEventListener('click', async (e) => {
+    const act = e.target.closest('[data-event]')?.dataset.event;
+    if (act === 'test') switchEvent(TEST_EVENT_ID);
+    if (act === 'main') switchEvent(MAIN_EVENT_ID);
+    if (act === 'wipe' && isTestEvent() && confirm('Xóa toàn bộ người chơi, cặp, trận, phiếu của GIẢI THỬ?')) {
+      const btn = e.target.closest('button');
+      btn.disabled = true;
+      btn.textContent = 'Đang xóa…';
+      await save(() => wipeTestEvent(firestore()));
+      btn.textContent = 'Đã xóa';
+    }
+  });
+}
+
+// Xóa sạch giải thử (kể cả nhật ký từng pha). Chỉ chạy khi đang ở giải thử.
+async function wipeTestEvent(fs) {
+  if (!isTestEvent()) return;
+  const refs = [];
+  for (const name of ['players', 'teams', 'votes']) {
+    (await fs.getDocs(sub(fs, name))).docs.forEach((d) => refs.push(d.ref));
+  }
+  for (const m of (await fs.getDocs(sub(fs, 'matches'))).docs) {
+    (await fs.getDocs(fs.collection(fs.db, m.ref.path, 'rallies'))).docs.forEach((d) => refs.push(d.ref));
+    refs.push(m.ref);
+  }
+  refs.push(eventDoc(fs));
+  for (let i = 0; i < refs.length; i += 400) {
+    const batch = fs.writeBatch(fs.db);
+    refs.slice(i, i + 400).forEach((r) => batch.delete(r));
+    await batch.commit();
+  }
 }

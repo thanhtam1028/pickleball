@@ -1,5 +1,6 @@
 import { session, onSession, initFirebase, signIn, signOutUser, ROLE_LABEL, firestore } from './firebase.js';
 import { startAutoAdvance } from './auto-advance.js';
+import { isTestEvent, switchEvent, MAIN_EVENT_ID } from './data.js';
 import { esc, icon } from './dom.js';
 import * as home from './views/home.js';
 import * as more from './views/more.js';
@@ -99,6 +100,9 @@ function renderChrome() {
   } else if (!session.configured) {
     banner.innerHTML = '<b>Đang xem thử trên máy.</b> Website chưa nối với Firebase nên chưa đăng nhập hay lưu dữ liệu được. Làm theo hướng dẫn tạo Firebase rồi dán cấu hình vào <code>js/firebase-config.js</code>.';
     banner.hidden = false;
+  } else if (isTestEvent()) {
+    banner.innerHTML = '<b>Đang ở GIẢI THỬ.</b> Mọi thao tác ở đây không ảnh hưởng giải thật. <button class="btn btn-small" data-action="main-event">Về giải thật</button>';
+    banner.hidden = false;
   } else {
     banner.hidden = true;
   }
@@ -120,6 +124,7 @@ document.addEventListener('click', (e) => {
   const action = e.target.closest('[data-action]')?.dataset.action;
   if (action === 'sign-in') signIn();
   if (action === 'sign-out') signOutUser();
+  if (action === 'main-event') switchEvent(MAIN_EVENT_ID);
 });
 
 window.addEventListener('hashchange', () => {

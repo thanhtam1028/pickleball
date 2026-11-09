@@ -3,8 +3,32 @@ import { CROSS_CLASS } from './core/pairing.js';
 
 export { CROSS_CLASS };
 
-// Website hiện phục vụ một giải. Đổi EVENT_ID để tổ chức giải mới mà dữ liệu giải cũ vẫn giữ nguyên.
-export const EVENT_ID = 'dai-chien-ceo';
+// Giải thật. Đổi mã này để tổ chức giải mới mà dữ liệu giải cũ vẫn giữ nguyên.
+export const MAIN_EVENT_ID = 'dai-chien-ceo';
+// Giải thử: bộ dữ liệu riêng để ban tổ chức tập dượt, không ảnh hưởng giải thật.
+export const TEST_EVENT_ID = 'giai-thu';
+const EVENT_KEY = 'pickleball-event';
+
+function readEventId() {
+  try {
+    return localStorage.getItem(EVENT_KEY) === TEST_EVENT_ID ? TEST_EVENT_ID : MAIN_EVENT_ID;
+  } catch {
+    return MAIN_EVENT_ID;
+  }
+}
+
+// Mỗi trình duyệt tự chọn đang xem giải nào; mặc định là giải thật.
+export const EVENT_ID = readEventId();
+export const isTestEvent = () => EVENT_ID === TEST_EVENT_ID;
+
+export function switchEvent(id) {
+  try {
+    if (id === TEST_EVENT_ID) localStorage.setItem(EVENT_KEY, id); else localStorage.removeItem(EVENT_KEY);
+  } catch { /* trình duyệt chặn lưu thì vẫn ở giải thật */ }
+  location.hash = '#/';
+  location.reload();
+}
+
 export const CLASSES = ['CEO 110', 'CEO 111'];
 
 export const eventDoc = (fs) => fs.doc(fs.db, 'events', EVENT_ID);

@@ -244,7 +244,7 @@ export function render(el, { session }) {
         ${editable && m.status === 'scheduled' ? `<input type="checkbox" class="pick" data-swap="${esc(m.id)}" ${swapPick.has(m.id) ? 'checked' : ''} aria-label="Chọn để hoán đổi">` : '<span class="pick-spacer"></span>'}
         <span class="match-time"><b>${esc(m.startAt)}</b><span class="muted small">${esc(courtName(courts(), m.court))}</span></span>
         <span class="match-body">
-          <span class="muted small">${esc(m.label)}${m.countsForClass ? '' : ' · không tính điểm lớp'}</span>
+          <span class="muted small">${esc(m.label)}${!m.countsForClass && ['pool', 'warmup'].includes(m.stage) ? ' · không tính điểm lớp' : ''}</span>
           <span>${sideLabel(m.a, srcLabel(m.srcA))} <span class="muted">vs</span> ${sideLabel(m.b, srcLabel(m.srcB))}</span>
           ${m.status ? `<span class="small">${STATUS_LABEL[m.status]}${scoreText(m) ? ` · ${esc(scoreText(m))}` : ''}${m.walkoverReason ? ` · ${esc(m.walkoverReason)}` : ''}</span>` : ''}
         </span>

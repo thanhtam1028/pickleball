@@ -1,5 +1,5 @@
 import { esc, icon } from '../dom.js';
-import { ROLE_LABEL, firestore, signInWithAccount, changeMyPassword } from '../firebase.js';
+import { ROLE_LABEL, firestore, changeMyPassword } from '../firebase.js';
 import { validatePassword } from '../core/accounts.js';
 import { isTestEvent, switchEvent, MAIN_EVENT_ID, TEST_EVENT_ID, sub, eventDoc, save } from '../data.js';
 
@@ -35,17 +35,8 @@ export function render(el, { session }) {
   if (!session.configured) {
     account = '<p class="muted">Chế độ xem thử: chưa nối Firebase nên chưa đăng nhập được.</p>';
   } else if (!session.user) {
-    account = `<p class="muted">Ban tổ chức và trọng tài đăng nhập bằng Google hoặc bằng tài khoản do ban tổ chức cấp. Khán giả không cần đăng nhập.</p>
-      <button class="btn" data-action="sign-in">Đăng nhập bằng Google</button>
-      <p class="login-or">hoặc đăng nhập bằng tên đăng nhập</p>
-      <form class="login-form" id="account-login" autocomplete="on">
-        <label class="field"><span class="field-label">Tên đăng nhập</span>
-          <input name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
-        <label class="field"><span class="field-label">Mật khẩu</span>
-          <input name="password" type="password" autocomplete="current-password" required></label>
-        <p class="note" id="login-err" hidden></p>
-        <button class="btn btn-ghost" type="submit">Đăng nhập</button>
-      </form>`;
+    account = `<p class="muted">Ban tổ chức và trọng tài đăng nhập bằng tên đăng nhập hoặc Google. Khán giả không cần đăng nhập.</p>
+      <a class="btn" href="#/dang-nhap">Đăng nhập</a>`;
   } else if (role === 'pending') {
     account = `<p>Xin chào <b>${esc(session.user.name)}</b>. Tài khoản đang <b>chờ ban tổ chức duyệt</b>. Sau khi được duyệt, tải lại trang.</p>
       <button class="btn btn-ghost" data-action="sign-out">Đăng xuất</button>`;
@@ -81,16 +72,6 @@ export function render(el, { session }) {
 
   el.addEventListener('submit', async (e) => {
     const f = e.target;
-    if (f.id === 'account-login') {
-      e.preventDefault();
-      const err = el.querySelector('#login-err');
-      const btn = f.querySelector('[type=submit]');
-      btn.disabled = true;
-      const msg = await signInWithAccount(f.elements.username.value, f.elements.password.value);
-      btn.disabled = false;
-      err.textContent = msg || '';
-      err.hidden = !msg;
-    }
     if (f.id === 'change-pw') {
       e.preventDefault();
       const box = el.querySelector('#pw-msg');

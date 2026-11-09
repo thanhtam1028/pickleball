@@ -20,6 +20,7 @@ import * as courtLive from './views/court-live.js';
 import * as vote from './views/vote.js';
 import * as exporter from './views/export.js';
 import * as audit from './views/audit.js';
+import * as login from './views/login.js';
 
 // Bốn mục của thanh menu chính.
 const TABS = [
@@ -35,6 +36,7 @@ const ROUTES = {
   '/xep-lich': { view: adminSchedule, tab: '/them' },
   '/xep-hang': { view: standings, tab: '/xep-hang' },
   '/them': { view: more, tab: '/them' },
+  '/dang-nhap': { view: login, tab: '/them' },
   '/phan-quyen': { view: rolesAdmin, tab: '/them' },
   '/cai-dat': { view: adminSettings, tab: '/them' },
   '/nguoi-choi': { view: adminPlayers, tab: '/them' },
@@ -78,7 +80,7 @@ function renderNav() {
 function accountHtml() {
   if (!session.configured) return '<span class="pill">Chế độ xem thử</span>';
   if (!session.ready) return '';
-  if (!session.user) return '<button class="btn btn-ghost btn-small" data-action="sign-in">Đăng nhập</button>';
+  if (!session.user) return '<a class="btn btn-ghost btn-small" href="#/dang-nhap">Đăng nhập</a>';
   const u = session.user;
   return `
     <div class="account">

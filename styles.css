@@ -458,3 +458,14 @@ body.tv-mode .view { max-width: none; padding: 0; }
   .qr-grid { grid-template-columns: repeat(2, 1fr); }
   .qr-card { border: 2px solid #000; page-break-inside: avoid; }
 }
+
+/* ---------- Tài khoản tên đăng nhập ---------- */
+.pw-row { display: flex; gap: 8px; align-items: center; }
+.pw-row input { flex: 1; }
+.cred { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 10px 0; }
+.cred dt { font-weight: 600; }
+.cred dd { margin: 0; word-break: break-all; }
+.cred code { font-size: 1.05rem; user-select: all; }
+.created-box { border: 2px solid var(--brand); }
+.login-form { display: flex; flex-direction: column; gap: 10px; max-width: 360px; }
+.login-or { text-align: center; color: var(--muted); font-size: .85rem; margin: 4px 0; }

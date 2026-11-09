@@ -1,4 +1,5 @@
 import { firebaseConfig, ADMIN_EMAIL } from './firebase-config.js';
+import { usernameToEmail, isAccountEmail, emailToUsername, authErrorText } from './core/accounts.js';
 
 const SDK = 'https://www.gstatic.com/firebasejs/11.0.2';
 
@@ -50,11 +51,17 @@ export async function initFirebase() {
     });
     const auth = authMod.getAuth(app);
     auth.languageCode = 'vi';
-    fb = { app, db, auth, authMod, fsMod };
+    fb = { app, db, auth, appMod, authMod, fsMod };
 
     authMod.onAuthStateChanged(auth, async (user) => {
       session.user = user
-        ? { uid: user.uid, name: user.displayName || user.email, email: user.email, photo: user.photoURL }
+        ? {
+          uid: user.uid,
+          name: user.displayName || (isAccountEmail(user.email) ? emailToUsername(user.email) : user.email),
+          email: user.email,
+          username: isAccountEmail(user.email) ? emailToUsername(user.email) : null,
+          photo: user.photoURL,
+        }
         : null;
       session.role = user ? await resolveRole(user) : 'guest';
       session.ready = true;
@@ -98,6 +105,55 @@ export async function signIn() {
     } else if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
       alert(`Đăng nhập không thành công: ${err.message}`);
     }
+  }
+}
+
+// Đăng nhập bằng tên đăng nhập và mật khẩu do ban tổ chức cấp. Trả về chuỗi lỗi hoặc null.
+export async function signInWithAccount(username, password) {
+  if (!fb) return 'Chưa kết nối Firebase.';
+  try {
+    await fb.authMod.signInWithEmailAndPassword(fb.auth, usernameToEmail(username), password);
+    return null;
+  } catch (err) {
+    return authErrorText(err.code);
+  }
+}
+
+// Ban tổ chức tạo tài khoản cho người khác. Dùng một bản Firebase phụ, không lưu phiên,
+// để việc tạo tài khoản không làm ban tổ chức bị đăng xuất. Trả về { uid } hoặc { error }.
+export async function createManagedAccount({ username, password, name, role }) {
+  if (!fb) return { error: 'Chưa kết nối Firebase.' };
+  const { appMod, authMod, fsMod } = fb;
+  let secondary;
+  try {
+    secondary = appMod.initializeApp(firebaseConfig, `accounts-${Date.now()}`);
+    const auth2 = authMod.initializeAuth(secondary, { persistence: authMod.inMemoryPersistence });
+    const email = usernameToEmail(username);
+    const cred = await authMod.createUserWithEmailAndPassword(auth2, email, password);
+    await authMod.updateProfile(cred.user, { displayName: name });
+    await fsMod.setDoc(fsMod.doc(fb.db, 'roles', cred.user.uid), {
+      role, name, email, username, court: null, createdBy: session.user?.uid || null, createdVia: 'password',
+    });
+    await authMod.signOut(auth2);
+    return { uid: cred.user.uid };
+  } catch (err) {
+    return { error: authErrorText(err.code) };
+  } finally {
+    if (secondary) appMod.deleteApp(secondary).catch(() => {});
+  }
+}
+
+// Người dùng tự đổi mật khẩu của mình (chỉ với tài khoản tên đăng nhập). Trả về chuỗi lỗi hoặc null.
+export async function changeMyPassword(currentPassword, newPassword) {
+  if (!fb?.auth.currentUser) return 'Bạn chưa đăng nhập.';
+  const { EmailAuthProvider, reauthenticateWithCredential, updatePassword } = fb.authMod;
+  const user = fb.auth.currentUser;
+  try {
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, currentPassword));
+    await updatePassword(user, newPassword);
+    return null;
+  } catch (err) {
+    return authErrorText(err.code);
   }
 }
 

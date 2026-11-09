@@ -33,7 +33,8 @@ export function render(el, { session }) {
         <button class="btn btn-ghost" data-action="sign-in">Đăng nhập bằng Google</button>
       </section>
     </div>
-    <p class="muted small">Khán giả chỉ xem kết quả thì không cần đăng nhập.</p>`;
+    <p class="muted small">Khán giả chỉ xem kết quả thì không cần đăng nhập.</p>
+    <p><a class="btn btn-ghost" href="huong-dan.html">Hướng dẫn sử dụng (có hình, từng bước)</a></p>`;
 
   el.addEventListener('submit', async (e) => {
     const f = e.target;

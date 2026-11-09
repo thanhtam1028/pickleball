@@ -20,28 +20,30 @@ import * as courtLive from './views/court-live.js';
 import * as vote from './views/vote.js';
 import * as exporter from './views/export.js';
 import * as audit from './views/audit.js';
-import * as login from './views/login.js';
+import * as adminHub from './views/admin-hub.js';
 
-// Bốn mục của thanh menu chính.
+// Năm mục của thanh menu chính.
 const TABS = [
   { path: '/', label: 'Trực tiếp', icon: 'live' },
   { path: '/lich', label: 'Lịch', icon: 'calendar' },
   { path: '/xep-hang', label: 'Xếp hạng', icon: 'trophy' },
   { path: '/them', label: 'Thêm', icon: 'more' },
+  { path: '/quan-tri', label: 'Quản trị', icon: 'shield' },
 ];
 
 const ROUTES = {
   '/': { view: home, tab: '/' },
   '/lich': { view: schedule, tab: '/lich' },
-  '/xep-lich': { view: adminSchedule, tab: '/them' },
+  '/xep-lich': { view: adminSchedule, tab: '/quan-tri' },
   '/xep-hang': { view: standings, tab: '/xep-hang' },
   '/them': { view: more, tab: '/them' },
-  '/dang-nhap': { view: login, tab: '/them' },
-  '/phan-quyen': { view: rolesAdmin, tab: '/them' },
-  '/cai-dat': { view: adminSettings, tab: '/them' },
-  '/nguoi-choi': { view: adminPlayers, tab: '/them' },
-  '/san-cua-toi': { view: referee, tab: '/them' },
-  '/bam-diem': { view: matchScore, tab: '/them', param: true },
+  '/quan-tri': { view: adminHub, tab: '/quan-tri' },
+  '/dang-nhap': { view: adminHub, tab: '/quan-tri' },
+  '/phan-quyen': { view: rolesAdmin, tab: '/quan-tri' },
+  '/cai-dat': { view: adminSettings, tab: '/quan-tri' },
+  '/nguoi-choi': { view: adminPlayers, tab: '/quan-tri' },
+  '/san-cua-toi': { view: referee, tab: '/quan-tri' },
+  '/bam-diem': { view: matchScore, tab: '/quan-tri', param: true },
   '/tran': { view: matchView, tab: '/', param: true },
   '/tv': { view: tv, tab: '/them' },
   '/luat': { view: rules, tab: '/them' },
@@ -49,7 +51,7 @@ const ROUTES = {
   '/san': { view: courtLive, tab: '/', param: true },
   '/binh-chon': { view: vote, tab: '/them' },
   '/xuat': { view: exporter, tab: '/them' },
-  '/nhat-ky': { view: audit, tab: '/them', param: true },
+  '/nhat-ky': { view: audit, tab: '/quan-tri', param: true },
 };
 
 const viewEl = document.getElementById('view');
@@ -80,7 +82,7 @@ function renderNav() {
 function accountHtml() {
   if (!session.configured) return '<span class="pill">Chế độ xem thử</span>';
   if (!session.ready) return '';
-  if (!session.user) return '<a class="btn btn-ghost btn-small" href="#/dang-nhap">Đăng nhập</a>';
+  if (!session.user) return '<a class="btn btn-ghost btn-small" href="#/quan-tri">Đăng nhập</a>';
   const u = session.user;
   return `
     <div class="account">

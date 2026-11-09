@@ -1,8 +1,8 @@
 import { esc } from '../dom.js';
-import { ROLE_LABEL, signInWithAccount } from '../firebase.js';
+import { signInWithAccount } from '../firebase.js';
 
-// Trang đăng nhập: Google hoặc tên đăng nhập và mật khẩu do ban tổ chức cấp.
-// Nút "Đăng nhập" ở góc trên và ở trang Thêm đều dẫn về đây.
+// Phần đăng nhập của nút "Quản trị": tên đăng nhập và mật khẩu do ban tổ chức cấp, hoặc Google.
+// Chỉ được gọi khi chưa đăng nhập; trang Quản trị (admin-hub.js) lo phần đã đăng nhập.
 export function render(el, { session }) {
   if (!session.configured) {
     el.innerHTML = '<h1>Đăng nhập</h1><div class="card"><p class="muted">Chế độ xem thử: chưa nối Firebase nên chưa đăng nhập được.</p></div>';
@@ -12,20 +12,8 @@ export function render(el, { session }) {
     el.innerHTML = '<h1>Đăng nhập</h1><p class="muted">Đang kết nối…</p>';
     return null;
   }
-  if (session.user) {
-    // Đã đăng nhập xong thì về trang chủ; người đang chờ duyệt ở lại để đọc thông báo.
-    if (session.role !== 'pending') {
-      location.hash = '#/';
-      return null;
-    }
-    el.innerHTML = `<h1>Đăng nhập</h1><div class="card stack">
-      <p>Xin chào <b>${esc(session.user.name)}</b>. Tài khoản đang <b>chờ ban tổ chức duyệt</b> (${esc(ROLE_LABEL.pending)}). Sau khi được duyệt, tải lại trang.</p>
-      <div class="btn-row"><button class="btn btn-ghost" data-action="sign-out">Đăng xuất</button></div></div>`;
-    return null;
-  }
-
   el.innerHTML = `
-    <h1>Đăng nhập</h1>
+    <h1>Quản trị: đăng nhập</h1>
     <div class="login-grid">
       <section class="card stack">
         <h2>Tên đăng nhập và mật khẩu</h2>

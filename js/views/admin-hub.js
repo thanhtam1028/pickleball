@@ -48,6 +48,7 @@ export function render(el, ctx) {
           </form></details>` : ''}
       </section>
       ${isAdmin ? `<section class="card"><h2>Ban tổ chức</h2>${list(ADMIN_LINKS)}</section>` : ''}
+      <section class="card"><h2>Trợ giúp</h2>${list([['huong-dan.html', 'Hướng dẫn sử dụng (có hình, từng bước)']])}</section>
       ${isAdmin || isReferee ? `<section class="card"><h2>Trọng tài</h2>${list(REFEREE_LINKS)}</section>` : ''}
       ${isAdmin ? `<section class="card stack">
         <h2>Giải thử</h2>

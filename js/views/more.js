@@ -1,6 +1,7 @@
 import { esc } from '../dom.js';
 
 const PUBLIC_LINKS = [
+  ['huong-dan.html', 'Hướng dẫn sử dụng (có hình)'],
   ['#/luat', 'Luật cho người mới'],
   ['#/tv', 'Màn hình TV'],
   ['#/qr', 'Mã QR cho sân'],
